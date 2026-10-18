@@ -1,0 +1,40 @@
+@model Journal
+@{ ViewData["Title"] = "Leave journal"; }
+<p class="eyebrow">@DateTime.Today.Year / Leave journal</p>
+<h1>@(User.IsInRole("Manager") ? "A clear view of the team." : "Your time, at a glance.")</h1>
+@if (Model.Balance is { } balance)
+{
+    <div class="metrics">
+        <article><span>Annual allowance</span><strong>@balance.Allowance</strong></article>
+        <article><span>Approved</span><strong id="approved">@balance.Approved</strong></article>
+        <article><span>Pending / reserved</span><strong id="pending">@balance.Pending</strong></article>
+        <article><span>Available</span><strong id="available">@balance.Available</strong></article>
+    </div>
+    <a class="button" asp-action="Create">Request leave +</a>
+}
+else { <p class="intro">Approve or reject pending requests. Each decision updates the employee's balance.</p> }
+<section class="card"><h2>@(User.IsInRole("Manager") ? "Team requests" : "Your requests")</h2>
+@if (Model.Requests.Count == 0)
+{ <p>No requests yet. Your next break starts here.</p> }
+else
+{
+<div class="table-wrap"><table><thead><tr><th>Employee</th><th>Dates</th><th>Days</th><th>Reason</th><th>Status</th><th>Review</th></tr></thead><tbody>
+@foreach (var request in Model.Requests)
+{
+    <tr data-request-id="@request.Id"><td>@request.EmployeeName</td>
+    <td>@request.Start.ToString("yyyy-MM-dd") → @request.End.ToString("yyyy-MM-dd")</td>
+    <td>@request.Days</td><td>@request.Reason</td><td><span class="status">@request.Status</span></td><td>
+    @if (User.IsInRole("Manager") && request.Status == LeaveStatus.Pending)
+    {
+        <form asp-action="Decide" method="post" class="actions">
+            <input type="hidden" name="id" value="@request.Id" />
+            <button name="decision" value="approve">Approve</button>
+            <button class="quiet" name="decision" value="reject">Reject</button>
+        </form>
+    }
+    else { <span>@(request.DecidedBy ?? "Awaiting review")</span> }
+    </td></tr>
+}
+</tbody></table></div>
+}
+</section>

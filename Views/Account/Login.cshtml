@@ -1,0 +1,21 @@
+@model LoginForm
+@{ ViewData["Title"] = "Sign in"; }
+<p class="eyebrow">A little less admin</p>
+<h1>Time away,<br />clearly managed.</h1>
+<p class="intro">Request leave as an employee, then review it as a manager.</p>
+<div class="columns">
+<section class="card">
+<h2>Sign in to the demo</h2>
+<form asp-action="Login" method="post">
+    <div asp-validation-summary="All" class="errors" role="alert"></div>
+    <label asp-for="Email"></label><input asp-for="Email" autocomplete="username" />
+    <label asp-for="Password"></label><input asp-for="Password" autocomplete="current-password" />
+    <button type="submit">Sign in →</button>
+</form>
+</section>
+<aside class="card muted"><h2>Try both sides</h2>
+<p><strong>Employee</strong><br />alice@example.test<br />bob@example.test</p>
+<p><strong>Manager</strong><br />manager@example.test</p>
+<p>Password for all three: <code>DemoPass123!</code></p>
+<p>Use invented details only. Each employee starts with 20 days for the current calendar year.</p></aside>
+</div>

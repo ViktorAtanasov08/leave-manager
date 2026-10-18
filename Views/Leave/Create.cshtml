@@ -1,0 +1,13 @@
+@model RequestForm
+@{ ViewData["Title"] = "Request leave"; }
+<a asp-action="Index">← Back to journal</a>
+<h1>Make room<br />for time off.</h1>
+<p class="intro">Weekdays count toward your balance. Pending requests reserve days until a decision.</p>
+<section class="card narrow"><h2>New leave request</h2>
+<form asp-action="Create" method="post">
+    <div asp-validation-summary="All" class="errors" role="alert"></div>
+    <label asp-for="Start">Start date</label><input asp-for="Start" type="date" />
+    <label asp-for="End">End date</label><input asp-for="End" type="date" />
+    <label asp-for="Reason"></label><textarea asp-for="Reason" maxlength="200" rows="3"></textarea>
+    <button type="submit">Submit request →</button>
+</form></section>

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] · LeaveManager</title>
+    <link rel="stylesheet" href="~/site.css" />
+</head>
+<body>
+<header><a asp-controller="Leave" asp-action="Index" class="brand">LeaveManager<span>01 / learning edition</span></a>
+@if (User.Identity?.IsAuthenticated == true)
+{
+    <div class="account"><span>@User.Identity.Name · @(User.IsInRole("Manager") ? "Manager" : "Employee")</span>
+    <form asp-controller="Account" asp-action="Logout" method="post"><button class="quiet">Sign out</button></form></div>
+}
+</header>
+<main>
+    <p class="demo">Local demo · public test accounts · data resets on restart</p>
+    @if (TempData["Message"] is string message) { <p class="notice" role="status">@message</p> }
+    @RenderBody()
+</main>
+<footer>Built to learn C#, permissions and business rules. Weekdays only; public holidays are not included.</footer>
+</body>
+</html>

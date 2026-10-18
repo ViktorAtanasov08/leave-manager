@@ -1,0 +1,23 @@
+name: Build and verify
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build application and checks
+        run: dotnet build tests/LeaveManager.Checks/LeaveManager.Checks.csproj -c Release --warnaserror
+      - name: Business rules
+        run: dotnet run --project tests/LeaveManager.Checks/LeaveManager.Checks.csproj -c Release --no-build
+      - name: HTTP permissions and forms
+        run: python3 scripts/smoke.py
