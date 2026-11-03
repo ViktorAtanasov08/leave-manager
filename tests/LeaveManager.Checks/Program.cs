@@ -11,7 +11,12 @@ void Check(bool condition, string name)
 RequestForm Range(int start, int end, string reason = "Family break") => new() {
     Start = new DateOnly(2026, 1, start), End = new DateOnly(2026, 1, end), Reason = reason
 };
-var book = new LeaveBook(new FixedClock());
+var directory = Path.Combine(Path.GetTempPath(), "leave-checks-" + Guid.NewGuid());
+Directory.CreateDirectory(directory);
+var path = Path.Combine(directory, "leave.db");
+try
+{
+var book = new LeaveBook(new FixedClock(), path);
 Check(LeaveBook.CountWeekdays(new(2026, 1, 2), new(2026, 1, 5)) == 2, "Weekends do not consume days");
 Check(book.Submit("alice", "Alice", Range(5, 9, "  Family break  ")) is null, "Five-day request accepted");
 var journal = book.Read("alice", false);
@@ -39,11 +44,31 @@ Check(book.Submit("bob", "Bob", new() { Start = new(2025, 12, 31), End = new(202
 Check(book.Submit("bob", "Bob", new() { Start = new(2026, 12, 31), End = new(2027, 1, 2), Reason = "Cross-year" }) is not null,
     "Cross-year range refused");
 Check(book.Decide(999, true, "Manager") is not null, "Unknown request refused");
-var racing = new LeaveBook(new FixedClock());
-var outcomes = await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => Task.Run(() =>
-    racing.Submit("alice", "Alice", Range(5, 9)))));
+var reopened = new LeaveBook(new FixedClock(), path);
+Check(reopened.Read("alice", false).Balance == book.Read("alice", false).Balance,
+    "Balances survive reopening the database");
+Check(reopened.Read("alice", false).Requests.SequenceEqual(book.Read("alice", false).Requests),
+    "Requests and decisions survive reopening");
+var racePath = Path.Combine(directory, "race.db");
+var racing = new LeaveBook(new FixedClock(), racePath);
+var instances = Enumerable.Range(0, 8).Select(_ => new LeaveBook(new FixedClock(), racePath)).ToArray();
+var outcomes = await Task.WhenAll(instances.Select(instance => Task.Run(() =>
+    instance.Submit("alice", "Alice", Range(5, 9)))));
 Check(outcomes.Count(error => error is null) == 1, "Concurrent overlapping submissions create only one request");
+var decisions = await Task.WhenAll(instances.Select((instance, i) => Task.Run(() =>
+    instance.Decide(1, i % 2 == 0, "Manager " + i))));
+Check(decisions.Count(error => error is null) == 1, "Separate instances cannot decide the same request twice");
+var budgetPath = Path.Combine(directory, "budget.db");
+var first = new LeaveBook(new FixedClock(), budgetPath);
+var second = new LeaveBook(new FixedClock(), budgetPath);
+var budgetResults = await Task.WhenAll(
+    Task.Run(() => first.Submit("alice", "Alice", new() { Start=new(2026,2,2), End=new(2026,2,20), Reason="First" })),
+    Task.Run(() => second.Submit("alice", "Alice", new() { Start=new(2026,3,2), End=new(2026,3,20), Reason="Second" })));
+Check(budgetResults.Count(error => error is null) == 1 && first.Read("alice", false).Balance!.Available == 5,
+    "Concurrent non-overlapping requests cannot overspend allowance");
 Console.WriteLine($"{checks} business checks passed.");
+}
+finally { Directory.Delete(directory, recursive: true); }
 
 sealed class FixedClock : TimeProvider
 {

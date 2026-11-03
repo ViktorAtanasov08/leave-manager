@@ -6,6 +6,7 @@ from pathlib import Path
 import re
 import socket
 import subprocess
+import tempfile
 import time
 import urllib.error
 import urllib.parse
@@ -51,7 +52,9 @@ def check(condition, label):
     print("PASS:", label)
 
 
-environment = {**os.environ, "ASPNETCORE_ENVIRONMENT": "Development"}
+temporary = tempfile.TemporaryDirectory()
+environment = {**os.environ, "ASPNETCORE_ENVIRONMENT": "Development",
+               "Database__Path": str(Path(temporary.name) / "leave.db")}
 with subprocess.Popen(["dotnet", str(ROOT / "bin/Release/net10.0/LeaveManager.dll"),
                        "--urls", BASE], cwd=ROOT, env=environment,
                       stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT) as process:
@@ -98,3 +101,4 @@ with subprocess.Popen(["dotnet", str(ROOT / "bin/Release/net10.0/LeaveManager.dl
     finally:
         process.terminate()
         process.wait(timeout=15)
+        temporary.cleanup()
