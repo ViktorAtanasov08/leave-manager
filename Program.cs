@@ -10,7 +10,9 @@ if (!builder.Environment.IsDevelopment())
 builder.Services.AddControllersWithViews();
 builder.Services.AddSingleton<DemoUsers>();
 builder.Services.AddSingleton(TimeProvider.System);
-builder.Services.AddSingleton<LeaveBook>();
+var databasePath = builder.Configuration["Database:Path"]
+    ?? Path.Combine(builder.Environment.ContentRootPath, "data", "leave.db");
+builder.Services.AddSingleton(new LeaveBook(TimeProvider.System, databasePath));
 builder.Services.AddDataProtection().PersistKeysToFileSystem(
     new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, ".local-keys")));
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

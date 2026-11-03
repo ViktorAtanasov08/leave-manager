@@ -2,7 +2,7 @@
 
 [![Build and verify](https://github.com/ViktorAtanasov08/leave-manager/actions/workflows/build.yml/badge.svg)](https://github.com/ViktorAtanasov08/leave-manager/actions/workflows/build.yml)
 
-**In progress — initial MVC milestone.** A small C# / ASP.NET Core MVC application for practising authentication, permissions and leave-request business rules.
+**Persistent local demo.** A small C# / ASP.NET Core MVC application with SQLite storage for practising authentication, permissions and leave-request business rules. Requests, decisions and balances survive restarts.
 
 ## What works
 
@@ -34,7 +34,7 @@ Submit a request as Alice, sign out, approve it as Manager, then sign in as Alic
 
 ## Scope and limitations
 
-This milestone runs only in the Development environment. It is a local learning demo, not an employee HR system for deployment. Accounts and requests are held in memory, shared in one app instance and reset on restart. Cookie-protection keys are kept in ignored `.local-keys/`; there is no registration, account database, password recovery or login throttling.
+This demo runs only in the Development environment. Keep it on localhost and use fictional data. Back up the database with the app stopped. Never commit the database or local protection keys. It is a local learning demo, not an employee HR system for deployment. Requests and decisions are stored in **data/leave.db**, created automatically. Balances are calculated from the saved requests. The three demo identities are still fixed in code. Set **Database__Path** to use another database file. SQLite transactions serialize balance checks and writes across instances using the same file. Cookie-protection keys are kept in ignored `.local-keys/`; there is no registration, account database, password recovery or login throttling.
 
 Leave must fit within the **current calendar year** and start today or later. Every employee receives a simplified fixed allowance of 20 days. Saturdays and Sundays are excluded; public holidays, carry-over, part days, cancellation, accrual and regional employment policies are not implemented. The application uses the server's local date. These are demonstration rules.
 
@@ -45,7 +45,8 @@ Leave must fit within the **current calendar year** and start today or later. Ev
 | `Controllers/AccountController.cs` | Sign-in, sign-out and claims |
 | `Controllers/LeaveController.cs` | Forms and role checks |
 | `Services/DemoUsers.cs` | Three fixed demo identities and hashed demo passwords |
-| `Services/LeaveBook.cs` | In-memory requests, weekday counting and balances |
+| `Services/LeaveBook.cs` | Transactional request rules, weekday counting and balances |
+| `Services/LeaveDatabase.cs` | SQLite initialization and request mapping |
 | `Models/LeaveModels.cs` | Form validation and immutable request records |
 | `Views/` | Razor pages and accessible labelled forms |
 
@@ -57,20 +58,21 @@ GitHub Actions builds with warnings treated as errors, runs deterministic busine
 dotnet build tests/LeaveManager.Checks/LeaveManager.Checks.csproj -c Release --warnaserror
 dotnet run --project tests/LeaveManager.Checks/LeaveManager.Checks.csproj -c Release --no-build
 python scripts/smoke.py
+python scripts/persistence.py
 ```
 
-The console checks use a fixed clock, so date-dependent business tests work throughout the year. They cover reservation/approval/rejection, overlapping requests, invalid dates, insufficient allowance, isolated employee views and concurrent submissions. HTTP checks cover sign-in, wrong passwords, employee/manager endpoint permissions, form validation, CSRF protection and logout. Browser appearance and production security are outside these checks.
+The console checks use a fixed clock, so date-dependent business tests work throughout the year. They cover reservation/approval/rejection, overlapping requests, invalid dates, insufficient allowance, isolated employee views and concurrent submissions. HTTP checks cover sign-in, wrong passwords, employee/manager endpoint permissions, form validation, CSRF protection and logout. Separate database instances test competing approvals, overlapping submissions and non-overlapping requests that would exceed the allowance. The persistence suite creates requests over HTTP, restarts the process and checks saved approval, balances and employee isolation. Tests use temporary databases; they do not erase the local demo database. Browser appearance and production security are outside these checks.
 
 ## Next milestones
 
-- [ ] Walk through the code together and make a small independent change.
-- [ ] Replace temporary storage with SQL and migrations.
+- [x] Replace temporary request storage with SQLite and verify restart persistence.
+- [ ] Introduce versioned schema migrations when the model changes.
 - [ ] Introduce database-backed accounts and a suitable identity solution.
 - [ ] Add request cancellation, year selection and public-holiday rules.
 - [ ] Capture screenshots from a verified running browser session.
 
 ## Learning notes
 
-This initial scaffold was prepared with AI assistance. It is an unfinished learning project; the next step is to run, explain and extend it together. See [the first walkthrough](docs/day-01.md).
+Built with AI assistance, including the SQLite persistence update. The demo is not a production HR system and does not establish independent authorship. See [the persistence walkthrough](docs/persistence.md) for design decisions, interview questions and a follow-up exercise. The [first walkthrough](docs/day-01.md) records the earlier in-memory milestone.
 
 Reference: [Microsoft cookie authentication documentation](https://learn.microsoft.com/en-us/aspnet/core/security/authentication/cookie?view=aspnetcore-10.0).

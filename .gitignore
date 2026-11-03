@@ -5,3 +5,9 @@ obj/
 *.user
 *.log
 __pycache__/
+.local-data/
+data/
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
